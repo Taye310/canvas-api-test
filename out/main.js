@@ -22,11 +22,14 @@ window.onload = function () {
         var tf2 = new TextField("world");
         tf2.x = 35;
         tf2.y = offset;
+        //tf2.scaleX=3;////////scale后移动速度也会增加 是否应该解决？？？ 
         var img1 = new Bitmap("/pic.jpg");
         img1.x = offset;
         img1.y = 0;
-        img1.localAlpha = 0.5;
+        img1.scaleY = 2;
+        //img1.rotation=90;
         stage.localAlpha = 0.6;
+        stage.x = offset;
         stage.addChild(tf1);
         stage.addChild(tf2);
         stage.addChild(img1);
@@ -37,10 +40,15 @@ var DisplayObject = (function () {
     function DisplayObject() {
         this.x = 0;
         this.y = 0;
-        this.width = 100; //怎么设置成图片默认尺寸
+        this.scaleX = 1;
+        this.scaleY = 1;
+        this.rotation = 0;
+        this.width = 100; //怎么设置成图片默认尺寸???
         this.height = 100;
         this.localAlpha = 1;
         this.globalAlpha = 1;
+        this.localMat = new math.Matrix;
+        this.globalMat = new math.Matrix;
     }
     DisplayObject.prototype.Draw = function (context) { };
     return DisplayObject;
@@ -50,15 +58,16 @@ var DisplayObjectContainer = (function (_super) {
     function DisplayObjectContainer() {
         var _this = _super.call(this) || this;
         _this.array = [];
-        _this.parent = _this; //////////container不能再添加到别的container里
+        _this.parent = _this; //////////container不能再添加到别的container里？？？？
         return _this;
     }
     DisplayObjectContainer.prototype.Draw = function (context) {
+        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
+        this.globalMat = this.localMat;
         this.globalAlpha = this.localAlpha;
         for (var _i = 0, _a = this.array; _i < _a.length; _i++) {
             var drawable = _a[_i];
             drawable.Draw(context);
-            console.log(drawable.globalAlpha);
         }
     };
     DisplayObjectContainer.prototype.addChild = function (obj) {
@@ -76,14 +85,17 @@ var TextField = (function (_super) {
         return _this;
     }
     TextField.prototype.Draw = function (context) {
+        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
         this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        //this.globalMat=math.matrixAppendMatrix(this.parent.globalMat,this.localMat);
+        this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
         context.globalAlpha = this.globalAlpha;
-        context.fillText(this.text, this.x, this.y);
+        context.scale(this.globalMat.a, this.globalMat.d);
+        context.fillText(this.text, this.globalMat.tx, this.globalMat.ty);
         context.globalAlpha = 1;
+        context.scale(1 / this.globalMat.a, 1 / this.globalMat.d);
     };
     return TextField;
-}(DisplayObjectContainer));
+}(DisplayObject));
 var Bitmap = (function (_super) {
     __extends(Bitmap, _super);
     function Bitmap(_src) {
@@ -93,13 +105,19 @@ var Bitmap = (function (_super) {
         return _this;
     }
     Bitmap.prototype.Draw = function (context) {
+        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
         this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        //this.globalMat=math.matrixAppendMatrix(this.parent.globalMat,this.localMat);
-        //console.log(this.globalMat);
+        this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
+        console.log(this.globalMat.toString());
         context.globalAlpha = this.globalAlpha;
-        context.drawImage(this.img, this.x, this.y, this.width, this.height);
+        context.scale(this.globalMat.a, this.globalMat.d);
+        context.rotate(Math.asin(this.globalMat.b) * Math.PI / 180); //unfinish
+        context.drawImage(this.img, this.globalMat.tx, this.globalMat.ty, this.width, this.height);
+        ////还原
         context.globalAlpha = 1;
+        context.scale(1 / this.globalMat.a, 1 / this.globalMat.d);
+        context.rotate(-Math.asin(this.globalMat.b) * Math.PI / 180); //unfinish
     };
     return Bitmap;
-}(DisplayObjectContainer));
+}(DisplayObject));
 //# sourceMappingURL=main.js.map

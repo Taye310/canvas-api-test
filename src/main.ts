@@ -15,15 +15,19 @@ window.onload = () => {
         var tf1 = new TextField("hello");
         tf1.x = 10;
         tf1.y = offset;
-        tf1.localAlpha=0.3;
+        tf1.localAlpha = 0.3;
         var tf2 = new TextField("world");
         tf2.x = 35;
         tf2.y = offset;
+        //tf2.scaleX=3;////////scale后移动速度也会增加 是否应该解决？？？ 
         var img1 = new Bitmap("/pic.jpg");
         img1.x = offset;
         img1.y = 0;
-        img1.localAlpha = 0.5;
-        stage.localAlpha=0.6;
+        img1.scaleY=2;
+        //img1.rotation=90;
+        
+        stage.localAlpha = 0.6;
+        stage.x = offset;
 
         stage.addChild(tf1);
         stage.addChild(tf2);
@@ -40,12 +44,17 @@ interface Drawable {
 class DisplayObject implements Drawable {
     x: number = 0;
     y: number = 0;
-    width: number = 100;//怎么设置成图片默认尺寸
+    scaleX: number = 1;
+    scaleY: number = 1;
+    rotation: number = 0;
+    width: number = 100;//怎么设置成图片默认尺寸???
     height: number = 100;
     localAlpha: number = 1;
     globalAlpha: number = 1;
-    localMat: math.Matrix;
-    globalMat: math.Matrix;
+    localMat: math.Matrix = new math.Matrix;
+    globalMat: math.Matrix = new math.Matrix;
+
+    parent: DisplayObject;
 
     Draw(context: CanvasRenderingContext2D) { }
 }
@@ -53,28 +62,28 @@ class DisplayObject implements Drawable {
 class DisplayObjectContainer extends DisplayObject {
     array: DisplayObject[] = [];
 
-    parent: DisplayObject;
-
     constructor() {
         super();
-        this.parent = this;//////////container不能再添加到别的container里
+        this.parent = this;//////////container不能再添加到别的container里？？？？
     }
 
     Draw(context: CanvasRenderingContext2D) {
-        this.globalAlpha=this.localAlpha;
+        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
+
+        this.globalMat = this.localMat;
+        this.globalAlpha = this.localAlpha;
         for (let drawable of this.array) {
             drawable.Draw(context);
-            console.log(drawable.globalAlpha)
         }
     }
 
-    addChild(obj: DisplayObjectContainer) {
+    addChild(obj: DisplayObject) {
         obj.parent = this;
         this.array.push(obj);
     }
 }
 
-class TextField extends DisplayObjectContainer {
+class TextField extends DisplayObject {
 
     text: string;
     globalAlpha = 1;
@@ -86,17 +95,21 @@ class TextField extends DisplayObjectContainer {
     }
 
     Draw(context: CanvasRenderingContext2D) {
-        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        //this.globalMat=math.matrixAppendMatrix(this.parent.globalMat,this.localMat);
-        context.globalAlpha = this.globalAlpha;
-        context.fillText(this.text, this.x, this.y);
-        context.globalAlpha = 1;
+        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
 
+        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
+        this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
+        context.globalAlpha = this.globalAlpha;
+        context.scale(this.globalMat.a, this.globalMat.d);
+        context.fillText(this.text, this.globalMat.tx, this.globalMat.ty);
+        context.globalAlpha = 1;
+        context.scale(1/this.globalMat.a,1/this.globalMat.d);
     }
 }
 
-class Bitmap extends DisplayObjectContainer {
+class Bitmap extends DisplayObject {
     img = new Image();
+    parent: DisplayObjectContainer;
 
     constructor(_src: string) {
         super();
@@ -105,12 +118,19 @@ class Bitmap extends DisplayObjectContainer {
     }
 
     Draw(context: CanvasRenderingContext2D) {
-        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
+        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
 
-        //this.globalMat=math.matrixAppendMatrix(this.parent.globalMat,this.localMat);
-        //console.log(this.globalMat);
+        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
+        this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
+        console.log(this.globalMat.toString());
+
         context.globalAlpha = this.globalAlpha;
-        context.drawImage(this.img, this.x, this.y, this.width, this.height);
+        context.scale(this.globalMat.a, this.globalMat.d);
+        context.rotate(Math.asin(this.globalMat.b)*Math.PI/180);//unfinish
+        context.drawImage(this.img, this.globalMat.tx, this.globalMat.ty, this.width, this.height);
+        ////还原
         context.globalAlpha = 1;
+        context.scale(1/this.globalMat.a,1/this.globalMat.d);
+        context.rotate(-Math.asin(this.globalMat.b)*Math.PI/180);//unfinish
     }
 }
