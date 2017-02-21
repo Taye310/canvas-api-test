@@ -1,3 +1,4 @@
+//较上版本完善父物体移动对子的影响
 window.onload = () => {
     var canvas = document.getElementById("canvas") as HTMLCanvasElement;
     var context2D = canvas.getContext("2d");
@@ -24,19 +25,18 @@ window.onload = () => {
         tf1.x = 10;
         tf1.y = offset;
         tf1.localAlpha = 0.8;
-        tf1.rotation=90;
-        tf1.scaleX=2;
+        tf1.rotation = 90;
+        tf1.scaleX = 2;
         var tf2 = new TextField("world");
         tf2.x = 35;
         tf2.y = 20;
-        console.log(tf2.globalMat.toString())
         var img1 = new Bitmap("/pic.jpg");
         img1.x = offset;
         img1.scaleY = 2;
         img1.rotation = 45;//unfinish
 
         stage.localAlpha = 0.6;
-        //stage.x = offset;//加上后图片有Y轴偏移 不知道怎么回事
+        stage.x = offset;
 
         stage.addChild(tf1);
         stage.addChild(tf2);
@@ -105,7 +105,7 @@ class TextField extends DisplayObject {
     Draw(context: CanvasRenderingContext2D) {
         this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
         this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
+        this.globalMat = math.matrixAppendMatrix(this.localMat, this.parent.globalMat);
         context.globalAlpha = this.globalAlpha;
         context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
         context.fillText(this.text, 0, 0);
@@ -127,7 +127,9 @@ class Bitmap extends DisplayObject {
     Draw(context: CanvasRenderingContext2D) {
         this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
         this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
+        this.globalMat = math.matrixAppendMatrix(this.localMat, this.parent.globalMat);
+        console.log(this.localMat.toString());
+        console.log(this.parent.globalMat.toString())
         context.globalAlpha = this.globalAlpha;
         context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
         context.drawImage(this.img, 0, 0, this.width, this.height);
