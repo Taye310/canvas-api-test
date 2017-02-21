@@ -27,16 +27,18 @@ window.onload = function () {
         tf1.x = 10;
         tf1.y = offset;
         tf1.localAlpha = 0.8;
+        tf1.rotation = 90;
+        tf1.scaleX = 2;
         var tf2 = new TextField("world");
-        tf2.x = 25;
-        tf2.y = offset;
-        //tf2.scaleX=3;////////scale后移动速度也会增加 是否应该解决？？？ 
+        tf2.x = 35;
+        tf2.y = 20;
+        console.log(tf2.globalMat.toString());
         var img1 = new Bitmap("/pic.jpg");
         img1.x = offset;
         img1.scaleY = 2;
         img1.rotation = 45; //unfinish
         stage.localAlpha = 0.6;
-        stage.x = offset;
+        //stage.x = offset;//加上后图片有Y轴偏移 不知道怎么回事
         stage.addChild(tf1);
         stage.addChild(tf2);
         stage.addChild(img1);
@@ -97,7 +99,7 @@ var TextField = (function (_super) {
         this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
         context.globalAlpha = this.globalAlpha;
         context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
-        context.fillText(this.text, this.globalMat.tx, this.globalMat.ty);
+        context.fillText(this.text, 0, 0);
         //还原
         context.globalAlpha = 1;
         context.setTransform(1, 0, 0, 1, 0, 0);
@@ -116,10 +118,9 @@ var Bitmap = (function (_super) {
         this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
         this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
         this.globalMat = math.matrixAppendMatrix(this.parent.globalMat, this.localMat);
-        console.log(this.globalMat.toString());
         context.globalAlpha = this.globalAlpha;
         context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
-        context.drawImage(this.img, this.globalMat.tx, this.globalMat.ty, this.width, this.height);
+        context.drawImage(this.img, 0, 0, this.width, this.height);
         ////还原
         context.globalAlpha = 1;
         context.setTransform(1, 0, 0, 1, 0, 0);
