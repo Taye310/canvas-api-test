@@ -6,51 +6,90 @@ window.onload = () => {
     var offset: number = 0;
     var stage = new DisplayObjectContainer();
 
+    var text1 = new TextField("text1");
+    var text2 = new TextField("text2");
+    text1.y = 100;
+    text1.x = 100;
+    text2.y = 100;
+    text2.x = 130;
+    //stage.rotation = 45;
+    stage.addChild(text1);
+    stage.addChild(text2);
+
+    stage.draw(context2D);
+
+
     // setInterval(() => {
+    //     offset++;
+    //     ////////////clear area and stage's Child
     //     stage.array = [];
     //     context2D.clearRect(0, 0, 400, 400);
-    //     var img2 = new Bitmap("/pic.jpg");
-    //     img2.rotation = 45;
-    //     stage.addChild(img2);
-    //     stage.Draw(context2D);
-    // }, 100)
+    //     ////////////
+    //     var tf1 = new TextField("hello");
+    //     tf1.x = 10;
+    //     tf1.y = offset;
+    //     tf1.localAlpha = 0.8;
+    //     tf1.rotation = 90;
+    //     tf1.scaleX = 2;
+    //     var tf2 = new TextField("world");
+    //     tf2.x = 35;
+    //     tf2.y = 20;
+    //     var img1 = new Bitmap("/pic.jpg");
+    //     img1.x = offset;
+    //     img1.scaleY = 2;
+    //     img1.rotation = 45;//unfinish
 
-    setInterval(() => {
-        offset++;
-        ////////////clear area and stage's Child
-        stage.array = [];
-        context2D.clearRect(0, 0, 400, 400);
-        ////////////
-        var tf1 = new TextField("hello");
-        tf1.x = 10;
-        tf1.y = offset;
-        tf1.localAlpha = 0.8;
-        tf1.rotation = 90;
-        tf1.scaleX = 2;
-        var tf2 = new TextField("world");
-        tf2.x = 35;
-        tf2.y = 20;
-        var img1 = new Bitmap("/pic.jpg");
-        img1.x = offset;
-        img1.scaleY = 2;
-        img1.rotation = 45;//unfinish
+    //     stage.localAlpha = 0.6;
+    //     stage.x = offset;
+    //     stage.rotation = 45;
 
-        stage.localAlpha = 0.6;
-        stage.x = offset;
+    //     stage.addChild(tf1);
+    //     stage.addChild(tf2);
+    //     stage.addChild(img1);
+    //     stage.draw(context2D);
+    // }, 100);
 
-        stage.addChild(tf1);
-        stage.addChild(tf2);
-        stage.addChild(img1);
-        stage.Draw(context2D);
-    }, 100);
+    //鼠标点击
+    window.onmousedown = (e) => {//onclick buyong youwenti  buyaoyong
+
+        //console.log(e);
+        let x = e.offsetX;
+        let y = e.offsetY;
+        let type = "mousedown";//mousemove,
+        let target: DisplayObject = stage.hitTest(190, 10);
+        let result = target;
+
+        if (result) {
+            //result.dispatchEvent();
+            while (result.parent) {
+                let currentTarget = result.parent;
+                let e = { type, target, currentTarget };
+                //result.dispatchEvent();
+                result = result.parent;
+            }
+        }
+    }
+
+
+    // //模拟点击
+    // setTimeout(() => {
+    //     let result: DisplayObject = stage.hitTest(190, 10);
+    //     if (result) {
+    //         //result.dispatchEvent();
+    //         while (result.parent) {
+    //             //result.dispatchEvent();
+    //             result = result.parent;
+    //         }
+    //     }
+    // }, 1000);
 };
 
 interface Drawable {
 
-    Draw(context: CanvasRenderingContext2D);
+    render(context: CanvasRenderingContext2D);
 }
 
-class DisplayObject implements Drawable {
+abstract class DisplayObject implements Drawable {
     x: number = 0;
     y: number = 0;
     scaleX: number = 1;
@@ -65,7 +104,33 @@ class DisplayObject implements Drawable {
 
     parent: DisplayObject;
 
-    Draw(context: CanvasRenderingContext2D) { }
+    touchEnabled: boolean;
+    //捕获冒泡机制
+    //消息机制
+    //模板方法方式
+    draw(context: CanvasRenderingContext2D) {
+        var localMat: math.Matrix = new math.Matrix;
+        localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
+        if (this.parent) {
+            this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
+            this.globalMat = math.matrixAppendMatrix(localMat, this.parent.globalMat);
+        } else {
+            this.globalAlpha = this.localAlpha;
+            this.globalMat = localMat;
+        }
+        context.save();
+        context.globalAlpha = this.globalAlpha;
+        context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
+        this.render(context);
+        context.restore();
+        //restore
+        // context.globalAlpha=1;
+        // context.setTransform(1,0,0,1,0,0);
+    }
+
+    abstract render(context: CanvasRenderingContext2D)
+
+    abstract hitTest(x, y): DisplayObject;
 }
 
 class DisplayObjectContainer extends DisplayObject {
@@ -73,15 +138,12 @@ class DisplayObjectContainer extends DisplayObject {
 
     constructor() {
         super();
-        this.parent = this;//////////container不能再添加到别的container里？？？？
     }
+    //render
+    render(context: CanvasRenderingContext2D) {
 
-    Draw(context: CanvasRenderingContext2D) {
-        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
-        this.globalMat = this.localMat;
-        this.globalAlpha = this.localAlpha;
         for (let drawable of this.array) {
-            drawable.Draw(context);
+            drawable.draw(context);
         }
     }
 
@@ -89,12 +151,21 @@ class DisplayObjectContainer extends DisplayObject {
         obj.parent = this;
         this.array.push(obj);
     }
+
+    hitTest(x, y) {
+        for (let i = this.array.length - 1; i >= 0; i--) {
+            let child = this.array[i];
+            let point = new math.Point(x, y);
+            let invertChildLocalMatrix = math.invertMatrix(child.localMat);
+            let pointBaseOnChild = math.pointAppendMatrix(point, invertChildLocalMatrix);
+        }
+        return null
+    }
 }
 
 class TextField extends DisplayObject {
 
     text: string;
-    globalAlpha = 1;
     parent: DisplayObjectContainer;
 
     constructor(_text: string) {
@@ -102,16 +173,17 @@ class TextField extends DisplayObject {
         this.text = _text;
     }
 
-    Draw(context: CanvasRenderingContext2D) {
-        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
-        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        this.globalMat = math.matrixAppendMatrix(this.localMat, this.parent.globalMat);
-        context.globalAlpha = this.globalAlpha;
-        context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
+    render(context: CanvasRenderingContext2D) {
         context.fillText(this.text, 0, 0);
-        //还原
-        context.globalAlpha = 1;
-        context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    hitTest(x: number, y: number) {
+        var rect = new math.Rectangle();
+        rect.width = 5 * this.text.length;
+        rect.height = 10;
+        var point = new math.Point(x, y);
+        return null;
+        //return rect.isPointInRectangle(point);//fanhui DisplayObject
     }
 }
 
@@ -124,17 +196,17 @@ class Bitmap extends DisplayObject {
         this.img.src = _src;
     }
 
-    Draw(context: CanvasRenderingContext2D) {
-        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
-        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        this.globalMat = math.matrixAppendMatrix(this.localMat, this.parent.globalMat);
-        console.log(this.localMat.toString());
-        console.log(this.parent.globalMat.toString())
-        context.globalAlpha = this.globalAlpha;
-        context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
+    render(context: CanvasRenderingContext2D) {
         context.drawImage(this.img, 0, 0, this.width, this.height);
-        ////还原
-        context.globalAlpha = 1;
-        context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    hitTest(x: number, y: number) {
+        let rect = new math.Rectangle();
+        rect.x = rect.y = 0;
+        rect.width = this.img.width;
+        rect.height = this.img.height;
+        if (rect.isPointInRectangle(new math.Point(x, y))) {
+            return this;
+        }
     }
 }

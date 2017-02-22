@@ -10,40 +10,72 @@ window.onload = function () {
     context2D.fillStyle = "#FF0000";
     var offset = 0;
     var stage = new DisplayObjectContainer();
+    var text1 = new TextField("text1");
+    var text2 = new TextField("text2");
+    text1.y = 100;
+    text1.x = 100;
+    text2.y = 100;
+    text2.x = 130;
+    //stage.rotation = 45;
+    stage.addChild(text1);
+    stage.addChild(text2);
+    stage.draw(context2D);
     // setInterval(() => {
+    //     offset++;
+    //     ////////////clear area and stage's Child
     //     stage.array = [];
     //     context2D.clearRect(0, 0, 400, 400);
-    //     var img2 = new Bitmap("/pic.jpg");
-    //     img2.rotation = 45;
-    //     stage.addChild(img2);
-    //     stage.Draw(context2D);
-    // }, 100)
-    setInterval(function () {
-        offset++;
-        ////////////clear area and stage's Child
-        stage.array = [];
-        context2D.clearRect(0, 0, 400, 400);
-        ////////////
-        var tf1 = new TextField("hello");
-        tf1.x = 10;
-        tf1.y = offset;
-        tf1.localAlpha = 0.8;
-        tf1.rotation = 90;
-        tf1.scaleX = 2;
-        var tf2 = new TextField("world");
-        tf2.x = 35;
-        tf2.y = 20;
-        var img1 = new Bitmap("/pic.jpg");
-        img1.x = offset;
-        img1.scaleY = 2;
-        img1.rotation = 45; //unfinish
-        stage.localAlpha = 0.6;
-        stage.x = offset;
-        stage.addChild(tf1);
-        stage.addChild(tf2);
-        stage.addChild(img1);
-        stage.Draw(context2D);
-    }, 100);
+    //     ////////////
+    //     var tf1 = new TextField("hello");
+    //     tf1.x = 10;
+    //     tf1.y = offset;
+    //     tf1.localAlpha = 0.8;
+    //     tf1.rotation = 90;
+    //     tf1.scaleX = 2;
+    //     var tf2 = new TextField("world");
+    //     tf2.x = 35;
+    //     tf2.y = 20;
+    //     var img1 = new Bitmap("/pic.jpg");
+    //     img1.x = offset;
+    //     img1.scaleY = 2;
+    //     img1.rotation = 45;//unfinish
+    //     stage.localAlpha = 0.6;
+    //     stage.x = offset;
+    //     stage.rotation = 45;
+    //     stage.addChild(tf1);
+    //     stage.addChild(tf2);
+    //     stage.addChild(img1);
+    //     stage.draw(context2D);
+    // }, 100);
+    //鼠标点击
+    window.onmousedown = function (e) {
+        //console.log(e);
+        var x = e.offsetX;
+        var y = e.offsetY;
+        var type = "mousedown"; //mousemove,
+        var target = stage.hitTest(190, 10);
+        var result = target;
+        if (result) {
+            //result.dispatchEvent();
+            while (result.parent) {
+                var currentTarget = result.parent;
+                var e_1 = { type: type, target: target, currentTarget: currentTarget };
+                //result.dispatchEvent();
+                result = result.parent;
+            }
+        }
+    };
+    // //模拟点击
+    // setTimeout(() => {
+    //     let result: DisplayObject = stage.hitTest(190, 10);
+    //     if (result) {
+    //         //result.dispatchEvent();
+    //         while (result.parent) {
+    //             //result.dispatchEvent();
+    //             result = result.parent;
+    //         }
+    //     }
+    // }, 1000);
 };
 var DisplayObject = (function () {
     function DisplayObject() {
@@ -59,7 +91,29 @@ var DisplayObject = (function () {
         this.localMat = new math.Matrix;
         this.globalMat = new math.Matrix;
     }
-    DisplayObject.prototype.Draw = function (context) { };
+    //捕获冒泡机制
+    //消息机制
+    //模板方法方式
+    DisplayObject.prototype.draw = function (context) {
+        var localMat = new math.Matrix;
+        localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
+        if (this.parent) {
+            this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
+            this.globalMat = math.matrixAppendMatrix(localMat, this.parent.globalMat);
+        }
+        else {
+            this.globalAlpha = this.localAlpha;
+            this.globalMat = localMat;
+        }
+        context.save();
+        context.globalAlpha = this.globalAlpha;
+        context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
+        this.render(context);
+        context.restore();
+        //restore
+        // context.globalAlpha=1;
+        // context.setTransform(1,0,0,1,0,0);
+    };
     return DisplayObject;
 }());
 var DisplayObjectContainer = (function (_super) {
@@ -67,21 +121,27 @@ var DisplayObjectContainer = (function (_super) {
     function DisplayObjectContainer() {
         var _this = _super.call(this) || this;
         _this.array = [];
-        _this.parent = _this; //////////container不能再添加到别的container里？？？？
         return _this;
     }
-    DisplayObjectContainer.prototype.Draw = function (context) {
-        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
-        this.globalMat = this.localMat;
-        this.globalAlpha = this.localAlpha;
+    //render
+    DisplayObjectContainer.prototype.render = function (context) {
         for (var _i = 0, _a = this.array; _i < _a.length; _i++) {
             var drawable = _a[_i];
-            drawable.Draw(context);
+            drawable.draw(context);
         }
     };
     DisplayObjectContainer.prototype.addChild = function (obj) {
         obj.parent = this;
         this.array.push(obj);
+    };
+    DisplayObjectContainer.prototype.hitTest = function (x, y) {
+        for (var i = this.array.length - 1; i >= 0; i--) {
+            var child = this.array[i];
+            var point = new math.Point(x, y);
+            var invertChildLocalMatrix = math.invertMatrix(child.localMat);
+            var pointBaseOnChild = math.pointAppendMatrix(point, invertChildLocalMatrix);
+        }
+        return null;
     };
     return DisplayObjectContainer;
 }(DisplayObject));
@@ -89,20 +149,19 @@ var TextField = (function (_super) {
     __extends(TextField, _super);
     function TextField(_text) {
         var _this = _super.call(this) || this;
-        _this.globalAlpha = 1;
         _this.text = _text;
         return _this;
     }
-    TextField.prototype.Draw = function (context) {
-        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
-        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        this.globalMat = math.matrixAppendMatrix(this.localMat, this.parent.globalMat);
-        context.globalAlpha = this.globalAlpha;
-        context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
+    TextField.prototype.render = function (context) {
         context.fillText(this.text, 0, 0);
-        //还原
-        context.globalAlpha = 1;
-        context.setTransform(1, 0, 0, 1, 0, 0);
+    };
+    TextField.prototype.hitTest = function (x, y) {
+        var rect = new math.Rectangle();
+        rect.width = 5 * this.text.length;
+        rect.height = 10;
+        var point = new math.Point(x, y);
+        return null;
+        //return rect.isPointInRectangle(point);//fanhui DisplayObject
     };
     return TextField;
 }(DisplayObject));
@@ -114,18 +173,17 @@ var Bitmap = (function (_super) {
         _this.img.src = _src;
         return _this;
     }
-    Bitmap.prototype.Draw = function (context) {
-        this.localMat.updateFromDisplayObject(this.x, this.y, this.scaleX, this.scaleY, this.rotation);
-        this.globalAlpha = this.parent.globalAlpha * this.localAlpha;
-        this.globalMat = math.matrixAppendMatrix(this.localMat, this.parent.globalMat);
-        console.log(this.localMat.toString());
-        console.log(this.parent.globalMat.toString());
-        context.globalAlpha = this.globalAlpha;
-        context.setTransform(this.globalMat.a, this.globalMat.b, this.globalMat.c, this.globalMat.d, this.globalMat.tx, this.globalMat.ty);
+    Bitmap.prototype.render = function (context) {
         context.drawImage(this.img, 0, 0, this.width, this.height);
-        ////还原
-        context.globalAlpha = 1;
-        context.setTransform(1, 0, 0, 1, 0, 0);
+    };
+    Bitmap.prototype.hitTest = function (x, y) {
+        var rect = new math.Rectangle();
+        rect.x = rect.y = 0;
+        rect.width = this.img.width;
+        rect.height = this.img.height;
+        if (rect.isPointInRectangle(new math.Point(x, y))) {
+            return this;
+        }
     };
     return Bitmap;
 }(DisplayObject));
