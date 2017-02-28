@@ -1,4 +1,4 @@
-//较上版本完善父物体移动对子的影响
+// function.call方法
 window.onload = () => {
     var canvas = document.getElementById("canvas") as HTMLCanvasElement;
     var context2D = canvas.getContext("2d");
@@ -6,83 +6,75 @@ window.onload = () => {
     var offset: number = 0;
     var stage = new DisplayObjectContainer();
 
-    var text1 = new TextField("text1");
-    var text2 = new TextField("text2");
-    text1.y = 100;
-    text1.x = 100;
-    text2.y = 100;
-    text2.x = 130;
     //stage.rotation = 45;
-    stage.addChild(text1);
-    stage.addChild(text2);
+    var pic1 = new Bitmap("/pic.jpg");
+    pic1.x = 200;
+    pic1.addEventListener(TouchType.TOUCH_TAP, () => {
+        alert("pic1 mousedown");
+    })
+    pic1.touchEnabled = true;
+    stage.addChild(pic1);
+    var pic2 = new Bitmap("/pic2.jpg");
+    pic2.touchEnabled = true;
+    stage.addChild(pic2);
+    var text = new TextField("TEXT");
+    text.x = 100;
+    text.y = 100;
+    text.scaleX = 5;
+    text.scaleY = 5;
+    text.touchEnabled = true;
+    stage.addChild(text);
 
-    stage.draw(context2D);
+    setTimeout(function () {
+        stage.draw(context2D);
+    }, 1000);
 
-
-    // setInterval(() => {
-    //     offset++;
-    //     ////////////clear area and stage's Child
-    //     stage.array = [];
-    //     context2D.clearRect(0, 0, 400, 400);
-    //     ////////////
-    //     var tf1 = new TextField("hello");
-    //     tf1.x = 10;
-    //     tf1.y = offset;
-    //     tf1.localAlpha = 0.8;
-    //     tf1.rotation = 90;
-    //     tf1.scaleX = 2;
-    //     var tf2 = new TextField("world");
-    //     tf2.x = 35;
-    //     tf2.y = 20;
-    //     var img1 = new Bitmap("/pic.jpg");
-    //     img1.x = offset;
-    //     img1.scaleY = 2;
-    //     img1.rotation = 45;//unfinish
-
-    //     stage.localAlpha = 0.6;
-    //     stage.x = offset;
-    //     stage.rotation = 45;
-
-    //     stage.addChild(tf1);
-    //     stage.addChild(tf2);
-    //     stage.addChild(img1);
-    //     stage.draw(context2D);
-    // }, 100);
 
     //鼠标点击
     window.onmousedown = (e) => {//onclick buyong youwenti  buyaoyong
-
-        //console.log(e);
         let x = e.offsetX;
         let y = e.offsetY;
-        let type = "mousedown";//mousemove,
-        let target: DisplayObject = stage.hitTest(190, 10);
+        let type = "mousedown";//mousemove
+        let target: DisplayObject = stage.hitTest(x, y);
         let result = target;
-
+        console.log(result)
         if (result) {
-            //result.dispatchEvent();
+            result.dispatchEvent(e);
             while (result.parent) {
                 let currentTarget = result.parent;
                 let e = { type, target, currentTarget };
-                //result.dispatchEvent();
                 result = result.parent;
+                result.dispatchEvent(e);
             }
         }
     }
+    window.onmousemove = (e) => {
 
+    }
 
-    // //模拟点击
-    // setTimeout(() => {
-    //     let result: DisplayObject = stage.hitTest(190, 10);
-    //     if (result) {
-    //         //result.dispatchEvent();
-    //         while (result.parent) {
-    //             //result.dispatchEvent();
-    //             result = result.parent;
-    //         }
-    //     }
-    // }, 1000);
-};
+    window.onmouseup = e => {
+        let x = e.offsetX;
+        let y = e.offsetY;
+        let type = "mouseup";//mousemove
+        let target: DisplayObject = stage.hitTest(x, y);
+        let result = target;
+        console.log(result)
+        if (result) {
+            result.dispatchEvent(e);
+            while (result.parent) {
+                let currentTarget = result.parent;
+                let e = { type, target, currentTarget };
+                result = result.parent;
+                result.dispatchEvent(e);
+            }
+        }
+    }
+}
+
+enum TouchType {
+    TOUCH_TAP,
+    TOUCH_MOVE
+}
 
 interface Drawable {
 
@@ -131,6 +123,31 @@ abstract class DisplayObject implements Drawable {
     abstract render(context: CanvasRenderingContext2D)
 
     abstract hitTest(x, y): DisplayObject;
+
+    type: TouchType[] = [];
+    function: Function[] = [];
+    isMouseDown: boolean = false;
+
+    addEventListener(_type: TouchType, listener: () => void, useCatch?: boolean) {
+        this.type.push(_type);
+        this.function.push(listener);
+    }
+
+    dispatchEvent(e: any) {
+        console.log(e.type);
+        if (e.type == "mousedown") {
+            this.isMouseDown = true;
+        }else if (e.type == "mouseup" && this.isMouseDown == true) {//other types unfinish
+            for(let i=0;i<this.type.length;i++){
+                if(this.type[i]==TouchType.TOUCH_TAP){
+                    this.function[i]();
+                }
+            }
+            this.isMouseDown=false;
+        }else if(e.type=="mousemove"){
+            
+        }
+    }
 }
 
 class DisplayObjectContainer extends DisplayObject {
@@ -138,6 +155,7 @@ class DisplayObjectContainer extends DisplayObject {
 
     constructor() {
         super();
+        this.touchEnabled = true;
     }
     //render
     render(context: CanvasRenderingContext2D) {
@@ -153,13 +171,19 @@ class DisplayObjectContainer extends DisplayObject {
     }
 
     hitTest(x, y) {
+
         for (let i = this.array.length - 1; i >= 0; i--) {
             let child = this.array[i];
             let point = new math.Point(x, y);
-            let invertChildLocalMatrix = math.invertMatrix(child.localMat);
-            let pointBaseOnChild = math.pointAppendMatrix(point, invertChildLocalMatrix);
+            let invertChildGlobalMatrix = math.invertMatrix(child.globalMat);
+            let pointBaseOnChild = math.pointAppendMatrix(point, invertChildGlobalMatrix);//stage不能动 其他container可以
+            if (child.hitTest(pointBaseOnChild.x, pointBaseOnChild.y)) {
+                return child;
+            }
         }
-        return null
+        if (this.touchEnabled) {
+            return this;//所有child都没有点到就返回container
+        }
     }
 }
 
@@ -179,11 +203,14 @@ class TextField extends DisplayObject {
 
     hitTest(x: number, y: number) {
         var rect = new math.Rectangle();
-        rect.width = 5 * this.text.length;
+        rect.y = -10
+        rect.width = 7 * this.text.length;
         rect.height = 10;
-        var point = new math.Point(x, y);
-        return null;
-        //return rect.isPointInRectangle(point);//fanhui DisplayObject
+        if (rect.isPointInRectangle(new math.Point(x, y)) && this.touchEnabled) {
+            return this;
+        } else {
+            return null;
+        }
     }
 }
 
@@ -203,10 +230,12 @@ class Bitmap extends DisplayObject {
     hitTest(x: number, y: number) {
         let rect = new math.Rectangle();
         rect.x = rect.y = 0;
-        rect.width = this.img.width;
-        rect.height = this.img.height;
-        if (rect.isPointInRectangle(new math.Point(x, y))) {
+        rect.width = this.width;//老师用的this.img.width为什么要用图片原尺寸？？？
+        rect.height = this.height;
+        if (rect.isPointInRectangle(new math.Point(x, y)) && this.touchEnabled) {
             return this;
+        } else {
+            return null;
         }
     }
 }

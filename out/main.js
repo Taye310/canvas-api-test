@@ -3,80 +3,77 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-//较上版本完善父物体移动对子的影响
+// function.call方法
 window.onload = function () {
     var canvas = document.getElementById("canvas");
     var context2D = canvas.getContext("2d");
     context2D.fillStyle = "#FF0000";
     var offset = 0;
     var stage = new DisplayObjectContainer();
-    var text1 = new TextField("text1");
-    var text2 = new TextField("text2");
-    text1.y = 100;
-    text1.x = 100;
-    text2.y = 100;
-    text2.x = 130;
     //stage.rotation = 45;
-    stage.addChild(text1);
-    stage.addChild(text2);
-    stage.draw(context2D);
-    // setInterval(() => {
-    //     offset++;
-    //     ////////////clear area and stage's Child
-    //     stage.array = [];
-    //     context2D.clearRect(0, 0, 400, 400);
-    //     ////////////
-    //     var tf1 = new TextField("hello");
-    //     tf1.x = 10;
-    //     tf1.y = offset;
-    //     tf1.localAlpha = 0.8;
-    //     tf1.rotation = 90;
-    //     tf1.scaleX = 2;
-    //     var tf2 = new TextField("world");
-    //     tf2.x = 35;
-    //     tf2.y = 20;
-    //     var img1 = new Bitmap("/pic.jpg");
-    //     img1.x = offset;
-    //     img1.scaleY = 2;
-    //     img1.rotation = 45;//unfinish
-    //     stage.localAlpha = 0.6;
-    //     stage.x = offset;
-    //     stage.rotation = 45;
-    //     stage.addChild(tf1);
-    //     stage.addChild(tf2);
-    //     stage.addChild(img1);
-    //     stage.draw(context2D);
-    // }, 100);
+    var pic1 = new Bitmap("/pic.jpg");
+    pic1.x = 200;
+    pic1.addEventListener(TouchType.TOUCH_TAP, function () {
+        alert("pic1 mousedown");
+    });
+    pic1.touchEnabled = true;
+    stage.addChild(pic1);
+    var pic2 = new Bitmap("/pic2.jpg");
+    pic2.touchEnabled = true;
+    stage.addChild(pic2);
+    var text = new TextField("TEXT");
+    text.x = 100;
+    text.y = 100;
+    text.scaleX = 5;
+    text.scaleY = 5;
+    text.touchEnabled = true;
+    stage.addChild(text);
+    setTimeout(function () {
+        stage.draw(context2D);
+    }, 1000);
     //鼠标点击
     window.onmousedown = function (e) {
-        //console.log(e);
         var x = e.offsetX;
         var y = e.offsetY;
-        var type = "mousedown"; //mousemove,
-        var target = stage.hitTest(190, 10);
+        var type = "mousedown"; //mousemove
+        var target = stage.hitTest(x, y);
         var result = target;
+        console.log(result);
         if (result) {
-            //result.dispatchEvent();
+            result.dispatchEvent(e);
             while (result.parent) {
                 var currentTarget = result.parent;
                 var e_1 = { type: type, target: target, currentTarget: currentTarget };
-                //result.dispatchEvent();
                 result = result.parent;
+                result.dispatchEvent(e_1);
             }
         }
     };
-    // //模拟点击
-    // setTimeout(() => {
-    //     let result: DisplayObject = stage.hitTest(190, 10);
-    //     if (result) {
-    //         //result.dispatchEvent();
-    //         while (result.parent) {
-    //             //result.dispatchEvent();
-    //             result = result.parent;
-    //         }
-    //     }
-    // }, 1000);
+    window.onmousemove = function (e) {
+    };
+    window.onmouseup = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        var type = "mouseup"; //mousemove
+        var target = stage.hitTest(x, y);
+        var result = target;
+        console.log(result);
+        if (result) {
+            result.dispatchEvent(e);
+            while (result.parent) {
+                var currentTarget = result.parent;
+                var e_2 = { type: type, target: target, currentTarget: currentTarget };
+                result = result.parent;
+                result.dispatchEvent(e_2);
+            }
+        }
+    };
 };
+var TouchType;
+(function (TouchType) {
+    TouchType[TouchType["TOUCH_TAP"] = 0] = "TOUCH_TAP";
+    TouchType[TouchType["TOUCH_MOVE"] = 1] = "TOUCH_MOVE";
+})(TouchType || (TouchType = {}));
 var DisplayObject = (function () {
     function DisplayObject() {
         this.x = 0;
@@ -90,6 +87,9 @@ var DisplayObject = (function () {
         this.globalAlpha = 1;
         this.localMat = new math.Matrix;
         this.globalMat = new math.Matrix;
+        this.type = [];
+        this.function = [];
+        this.isMouseDown = false;
     }
     //捕获冒泡机制
     //消息机制
@@ -114,6 +114,26 @@ var DisplayObject = (function () {
         // context.globalAlpha=1;
         // context.setTransform(1,0,0,1,0,0);
     };
+    DisplayObject.prototype.addEventListener = function (_type, listener, useCatch) {
+        this.type.push(_type);
+        this.function.push(listener);
+    };
+    DisplayObject.prototype.dispatchEvent = function (e) {
+        console.log(e.type);
+        if (e.type == "mousedown") {
+            this.isMouseDown = true;
+        }
+        else if (e.type == "mouseup" && this.isMouseDown == true) {
+            for (var i = 0; i < this.type.length; i++) {
+                if (this.type[i] == TouchType.TOUCH_TAP) {
+                    this.function[i]();
+                }
+            }
+            this.isMouseDown = false;
+        }
+        else if (e.type == "mousemove") {
+        }
+    };
     return DisplayObject;
 }());
 var DisplayObjectContainer = (function (_super) {
@@ -121,6 +141,7 @@ var DisplayObjectContainer = (function (_super) {
     function DisplayObjectContainer() {
         var _this = _super.call(this) || this;
         _this.array = [];
+        _this.touchEnabled = true;
         return _this;
     }
     //render
@@ -138,10 +159,15 @@ var DisplayObjectContainer = (function (_super) {
         for (var i = this.array.length - 1; i >= 0; i--) {
             var child = this.array[i];
             var point = new math.Point(x, y);
-            var invertChildLocalMatrix = math.invertMatrix(child.localMat);
-            var pointBaseOnChild = math.pointAppendMatrix(point, invertChildLocalMatrix);
+            var invertChildGlobalMatrix = math.invertMatrix(child.globalMat);
+            var pointBaseOnChild = math.pointAppendMatrix(point, invertChildGlobalMatrix); //stage不能动 其他container可以
+            if (child.hitTest(pointBaseOnChild.x, pointBaseOnChild.y)) {
+                return child;
+            }
         }
-        return null;
+        if (this.touchEnabled) {
+            return this; //所有child都没有点到就返回container
+        }
     };
     return DisplayObjectContainer;
 }(DisplayObject));
@@ -157,11 +183,15 @@ var TextField = (function (_super) {
     };
     TextField.prototype.hitTest = function (x, y) {
         var rect = new math.Rectangle();
-        rect.width = 5 * this.text.length;
+        rect.y = -10;
+        rect.width = 7 * this.text.length;
         rect.height = 10;
-        var point = new math.Point(x, y);
-        return null;
-        //return rect.isPointInRectangle(point);//fanhui DisplayObject
+        if (rect.isPointInRectangle(new math.Point(x, y)) && this.touchEnabled) {
+            return this;
+        }
+        else {
+            return null;
+        }
     };
     return TextField;
 }(DisplayObject));
@@ -179,10 +209,13 @@ var Bitmap = (function (_super) {
     Bitmap.prototype.hitTest = function (x, y) {
         var rect = new math.Rectangle();
         rect.x = rect.y = 0;
-        rect.width = this.img.width;
-        rect.height = this.img.height;
-        if (rect.isPointInRectangle(new math.Point(x, y))) {
+        rect.width = this.width; //老师用的this.img.width为什么要用图片原尺寸？？？
+        rect.height = this.height;
+        if (rect.isPointInRectangle(new math.Point(x, y)) && this.touchEnabled) {
             return this;
+        }
+        else {
+            return null;
         }
     };
     return Bitmap;
