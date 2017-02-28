@@ -10,27 +10,51 @@ window.onload = function () {
     context2D.fillStyle = "#FF0000";
     var offset = 0;
     var stage = new DisplayObjectContainer();
-    //stage.rotation = 45;
-    var pic1 = new Bitmap("/pic.jpg");
-    pic1.x = 200;
-    pic1.addEventListener(TouchType.TOUCH_TAP, function () {
-        alert("pic1 mousedown");
-    });
-    pic1.touchEnabled = true;
-    stage.addChild(pic1);
-    var pic2 = new Bitmap("/pic2.jpg");
-    pic2.touchEnabled = true;
-    stage.addChild(pic2);
+    // var pic1 = new Bitmap("/pic.jpg");
+    // pic1.x = 200;
+    // pic1.addEventListener(TouchType.TOUCH_TAP, () => {
+    //     alert("tap pic1");
+    // })
+    // pic1.touchEnabled = true;
+    // stage.addChild(pic1);
+    // var pic2 = new Bitmap("/pic2.jpg");
+    // pic2.touchEnabled = true;
+    // stage.addChild(pic2);
+    ////////////////////////////////////////////////////////////////////
+    var panel = new DisplayObjectContainer();
+    panel.width = 200;
+    panel.height = 200;
+    panel.addEventListener(TouchType.TOUCH_TAP, function (e) {
+        alert("tap panel");
+    }); //这里可以测试捕获
+    panel.touchEnabled = true;
     var text = new TextField("TEXT");
     text.x = 100;
     text.y = 100;
     text.scaleX = 5;
     text.scaleY = 5;
+    // text.addEventListener(TouchType.TOUCH_TAP, (e) => {
+    //     alert("tap text")
+    // })
+    panel.addEventListener(TouchType.TOUCH_MOVE, function (e) {
+        text.x = e.offsetX;
+        text.y = e.offsetY;
+        console.log(e.offsetX);
+    });
     text.touchEnabled = true;
-    stage.addChild(text);
-    setTimeout(function () {
+    // panel.addChild(text);
+    // stage.addChild(panel);
+    // setTimeout(function () {
+    //     stage.draw(context2D);
+    // }, 1000);
+    setInterval(function () {
+        stage.array = [];
+        context2D.clearRect(0, 0, 400, 400);
+        ///////////////////////////////////
+        panel.addChild(text);
+        stage.addChild(panel);
         stage.draw(context2D);
-    }, 1000);
+    }, 50);
     //鼠标点击
     window.onmousedown = function (e) {
         var x = e.offsetX;
@@ -50,14 +74,12 @@ window.onload = function () {
         }
     };
     window.onmousemove = function (e) {
-    };
-    window.onmouseup = function (e) {
         var x = e.offsetX;
         var y = e.offsetY;
-        var type = "mouseup"; //mousemove
+        var type = "mousemove";
         var target = stage.hitTest(x, y);
         var result = target;
-        console.log(result);
+        //console.log(result)
         if (result) {
             result.dispatchEvent(e);
             while (result.parent) {
@@ -68,11 +90,29 @@ window.onload = function () {
             }
         }
     };
+    window.onmouseup = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        var type = "mouseup";
+        var target = stage.hitTest(x, y);
+        var result = target;
+        //console.log(result)
+        if (result) {
+            result.dispatchEvent(e);
+            while (result.parent) {
+                var currentTarget = result.parent;
+                var e_3 = { type: type, target: target, currentTarget: currentTarget };
+                result = result.parent;
+                result.dispatchEvent(e_3);
+            }
+        }
+    };
 };
 var TouchType;
 (function (TouchType) {
     TouchType[TouchType["TOUCH_TAP"] = 0] = "TOUCH_TAP";
     TouchType[TouchType["TOUCH_MOVE"] = 1] = "TOUCH_MOVE";
+    TouchType[TouchType["TOUCH_DRAG"] = 2] = "TOUCH_DRAG";
 })(TouchType || (TouchType = {}));
 var DisplayObject = (function () {
     function DisplayObject() {
@@ -87,8 +127,10 @@ var DisplayObject = (function () {
         this.globalAlpha = 1;
         this.localMat = new math.Matrix;
         this.globalMat = new math.Matrix;
+        this.touchEnabled = false;
         this.type = [];
         this.function = [];
+        this.useCapture = false;
         this.isMouseDown = false;
     }
     //捕获冒泡机制
@@ -114,24 +156,30 @@ var DisplayObject = (function () {
         // context.globalAlpha=1;
         // context.setTransform(1,0,0,1,0,0);
     };
-    DisplayObject.prototype.addEventListener = function (_type, listener, useCatch) {
+    DisplayObject.prototype.addEventListener = function (_type, listener, _useCapture) {
         this.type.push(_type);
         this.function.push(listener);
+        this.useCapture = _useCapture;
     };
     DisplayObject.prototype.dispatchEvent = function (e) {
-        console.log(e.type);
+        //console.log(e.type);
         if (e.type == "mousedown") {
             this.isMouseDown = true;
         }
         else if (e.type == "mouseup" && this.isMouseDown == true) {
             for (var i = 0; i < this.type.length; i++) {
                 if (this.type[i] == TouchType.TOUCH_TAP) {
-                    this.function[i]();
+                    this.function[i](e);
                 }
             }
             this.isMouseDown = false;
         }
         else if (e.type == "mousemove") {
+            for (var i = 0; i < this.type.length; i++) {
+                if (this.type[i] == TouchType.TOUCH_MOVE) {
+                    this.function[i](e);
+                }
+            }
         }
     };
     return DisplayObject;
@@ -141,7 +189,6 @@ var DisplayObjectContainer = (function (_super) {
     function DisplayObjectContainer() {
         var _this = _super.call(this) || this;
         _this.array = [];
-        _this.touchEnabled = true;
         return _this;
     }
     //render
@@ -156,13 +203,16 @@ var DisplayObjectContainer = (function (_super) {
         this.array.push(obj);
     };
     DisplayObjectContainer.prototype.hitTest = function (x, y) {
+        if (this.useCapture == true) {
+            return this;
+        }
         for (var i = this.array.length - 1; i >= 0; i--) {
             var child = this.array[i];
             var point = new math.Point(x, y);
             var invertChildGlobalMatrix = math.invertMatrix(child.globalMat);
             var pointBaseOnChild = math.pointAppendMatrix(point, invertChildGlobalMatrix); //stage不能动 其他container可以
             if (child.hitTest(pointBaseOnChild.x, pointBaseOnChild.y)) {
-                return child;
+                return child.hitTest(pointBaseOnChild.x, pointBaseOnChild.y);
             }
         }
         if (this.touchEnabled) {
