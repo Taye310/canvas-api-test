@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"watch": false,
+		"sourceMap": true,
+		"out": "./engine/out/engine.js",
+		"declaration": true
+	},
+	"files": [
+		"src/core/math.ts",
+		"src/core/ticker.ts",
+		"src/core/displaylist.ts",
+		"src/platforms/browser/driver.ts"
+	]
+}
