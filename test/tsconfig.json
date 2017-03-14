@@ -1,10 +1,11 @@
 {
 	"compilerOptions": {
 		"target": "es5",
-		"module": "commonjs",
-		"watch": true,
+		"watch": false,
 		"sourceMap": true,
-		"outDir": "./out"
+		//"outDir": "./out",
+		"out": "./test/out/test.js",
+		"experimentalDecorators": true
 	},
 	"include": [
 		"src/**/*.ts",

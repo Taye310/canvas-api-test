@@ -113,6 +113,15 @@ namespace engine {
             this.array.push(obj);
         }
 
+        removeChild(obj: DisplayObject) {
+            obj.parent = null;
+            for (let i = 0; i < this.array.length; i++) {
+                if (this.array[i] == obj) {
+                    this.array[i] = null;
+                }
+            }
+        }
+
         hitTest(x, y) {
             if (this.useCapture[0] == true) {/////////////////////////////////////////////
                 return this;
@@ -136,16 +145,18 @@ namespace engine {
 
         text: string;
         parent: DisplayObjectContainer;
+        textColor: string;
 
         private _measureTextWidth: number = 0;
 
-        constructor(_text: string) {
+        constructor() {
             super();
-            this.text = _text;
         }
 
         render(context: CanvasRenderingContext2D) {
+            context.fillStyle = this.textColor;
             context.fillText(this.text, 0, 0);
+            context.fillStyle = null;//unsure
             this._measureTextWidth = context.measureText(this.text).width;
         }
 
@@ -159,6 +170,74 @@ namespace engine {
             } else {
                 return null;
             }
+        }
+    }
+
+    export class Shape extends DisplayObjectContainer {
+        graphics: Graphics = new Graphics();
+
+        constructor() {
+            super();
+        }
+
+    }
+
+    export class Graphics extends DisplayObject {
+
+        fillColor = "#000000";
+        alpha = 1;
+        globalAlpha = 1;
+        strokeColor = "#000000";
+        lineWidth = 1;
+        lineColor = "#000000";
+        x: number = 0;
+        y: number = 0;
+        width: number = 100;
+        height: number = 100;
+        context: CanvasRenderingContext2D;
+
+        render(context2D: CanvasRenderingContext2D) {
+            this.context = context2D;
+            context2D.globalAlpha = this.alpha;
+            context2D.fillStyle = this.fillColor;
+            context2D.fillRect(this.x, this.y, this.width, this.height);
+            context2D.fill();
+        }
+
+        hitTest(x: number, y: number) {
+            let rect = new engine.Rectangle();
+            rect.width = this.width;
+            rect.height = this.height;
+            let result = rect.isPointInRectangle(new engine.Point(x, y));
+            //console.log("bitmap", rect.height, rect.width, x, y);
+            if (result) {
+                return this;
+            }
+            else {
+                return null;
+            }
+        }
+
+        beginFill(color, alpha) {
+            this.fillColor = color;
+            this.alpha = alpha;
+        }
+
+        endFill() {
+            this.fillColor = "#000000";
+            this.alpha = 1;
+        }
+
+        drawRect(x1, y1, x2, y2) {
+            this.x = x1;
+            this.y = y1;
+            this.width = x2;
+            this.height = y2;
+        }
+
+        clear() {
+            // this.context.clearRect(this.x, this.y, this.width, this.height);
+            console.log("clear")
         }
     }
 
