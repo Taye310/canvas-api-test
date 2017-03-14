@@ -1,27 +1,28 @@
-
-
+var canvas = document.getElementById("canvas") as HTMLCanvasElement;
+var stage = engine.run(canvas);
+console.log("loading")
 setTimeout(function() {
-    var main=new Main();
+    var main=new Main(stage);
+    stage.addChild(main);
     console.log("loaded")
-}, 10000);
-
-
+}, 5000);
 
 class Main extends engine.DisplayObjectContainer {
 
-    stage:engine.DisplayObjectContainer=new engine.DisplayObjectContainer();
+    stage:engine.DisplayObjectContainer;
 
-    constructor(){
-        super();
-        this.createGameScene();
-    }
-
-    private textfield: engine.TextField;
     public list = new CommandList();
     public panel = new Panel();
     public bagState: boolean = false;
 
     public killCount: engine.TextField;
+
+    constructor(stage:engine.DisplayObjectContainer){
+        super();
+        this.stage=stage;
+        this.createGameScene();
+    }
+
     /**
      * 创建游戏场景
      * Create a game scene
@@ -30,7 +31,7 @@ class Main extends engine.DisplayObjectContainer {
         var mainScene = new GameScene("MainScene", this);
         GameScene.replaceScene(mainScene);
         this.list.execute();
-
+console.log(this)
         // engine.setTimeout(function () {
         //     this.list.cancel();
         //     this.list.addCommand(new WalkCommand(5, 5))
