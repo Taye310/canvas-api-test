@@ -82,6 +82,10 @@ class CommandList {
     private currentCommand: Command;
     private _frozen = false;
 
+    constructor(){
+        
+    }
+
     addCommand(command: Command) {
         this._list.push(command);
     }

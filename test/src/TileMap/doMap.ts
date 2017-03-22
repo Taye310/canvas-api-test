@@ -25,7 +25,6 @@ class doMap extends engine.DisplayObjectContainer {
                 container.addChild(bitmap);
             }
         }
-
     }
     private astar: AStar = new AStar();
     public astarPath(beginX: number, beginY: number, endX: number, endY: number): TileNode[] {

@@ -42,6 +42,7 @@ class Grid {
     }
 
     public setStartPoint(x: number, y: number): void {
+        console.log(this._arr[x][y])
         this._start = this._arr[x][y] as TileNode;
     }
     public getStartPoint(): TileNode {

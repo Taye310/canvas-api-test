@@ -18,13 +18,9 @@ class Character extends engine.DisplayObjectContainer {
         this._main.addChild(this._body);
         this._body.width = 100;
         this._body.height = 100;
-        this._body.x = this._body.width * 0.5;
-        console.log("anchorx :" + this._body.x);
-        this._body.y = this._body.height * 0;
+        this._body.x = 0;
+        this._body.y = 100;
         this._stateMachine = new StateMachine();
-        this._body.x = this._main.stage.width * 0.1 - 50;
-        this._body.y = this._main.stage.height * 0.9;
-        console.log(this._body.x);
         this._ifidle = true;
         this._ifmove = false;
     }
@@ -41,36 +37,48 @@ class Character extends engine.DisplayObjectContainer {
         // if (this.timer != null) {
         //     this.timer.stop();
         // }
-        // //触发状态机
-        // this._stateMachine.setState(this._moveState);
+        //触发状态机
+        this._stateMachine.setState(this._moveState);
 
-        // //如果状态机将_ifwalk变量调整为true,则进入运动状态
-        // if (this._ifmove) {
-        //     console.log("move");
-        //     this.startMove();
+        //如果状态机将_ifwalk变量调整为true,则进入运动状态
+        if (this._ifmove) {
+            console.log("move");
+            this.startMove();
 
-        //     //用Timer来实现固定间隔顺序读取路径数组中的点并移动
-        //     var interval: number = 500;
-        //     this.timer = new engine.Timer(interval, path.length - 1);
-        //     this.timer.addEventListener(engine.TimerEvent.TIMER, function (e: engine.TimerEvent): void {
-        //         path[-1] = path[0];
-        //         if ((path[this.timer.currentCount].x - path[this.timer.currentCount - 1].x) < 0) {
-        //             this._body.skewY = 180;
-        //         } else {
-        //             this._body.skewY = 0;
-        //         }
-        //         if (path.length != 0) {
-        //             engine.Tween.get(this._body).to({ x: (path[this.timer.currentCount].x + 1) * 100 - 50, y: (path[this.timer.currentCount].y) * 100 }, 500);
-        //             console.log("target:" + path[this.timer.currentCount - 1].x + " , " + path[this.timer.currentCount - 1].y);
-        //         }
-        //     }, this);
-        //     this.timer.addEventListener(engine.TimerEvent.TIMER_COMPLETE, function (e: TimeEvent): void {
-        //         this.idle();
-        //         callback();////////////////////////////
-        //     }, this);
-        //     this.timer.start();
-        //     console.log(path.length);
-        //}
+            // //用Timer来实现固定间隔顺序读取路径数组中的点并移动
+            // var interval: number = 500;
+            // this.timer = new engine.Timer(interval, path.length - 1);
+            // this.timer.addEventListener(engine.TimerEvent.TIMER, function (e: engine.TimerEvent): void {
+            //     path[-1] = path[0];
+            //     if ((path[this.timer.currentCount].x - path[this.timer.currentCount - 1].x) < 0) {
+            //         this._body.skewY = 180;
+            //     } else {
+            //         this._body.skewY = 0;
+            //     }
+            //     if (path.length != 0) {
+            //         engine.Tween.get(this._body).to({ x: (path[this.timer.currentCount].x + 1) * 100 - 50, y: (path[this.timer.currentCount].y) * 100 }, 500);
+            //         console.log("target:" + path[this.timer.currentCount - 1].x + " , " + path[this.timer.currentCount - 1].y);
+            //     }
+            // }, this);
+            // this.timer.addEventListener(engine.TimerEvent.TIMER_COMPLETE, function (e: TimeEvent): void {
+            //     this.idle();
+            //     callback();////////////////////////////
+            // }, this);
+            // this.timer.start();
+            // console.log(path.length);
+
+            if (path.length != 0) {
+                var counter = 0;
+                var id = setInterval(() => {
+                    this._body.x = (path[counter].x) * 100;
+                    this._body.y = (path[counter].y) * 100;
+                    counter++;
+                    if (counter == path.length) {
+                    clearInterval(id);
+                }
+                }, 500);
+            }
+        }
     }
 
 
@@ -87,12 +95,7 @@ class Character extends engine.DisplayObjectContainer {
 
     //播放运动动画
     public startMove() {
-        var list=[];
-        // var list = ["chara1_png", "chara2_png", "chara3_png", "chara4_png", "chara5_png",
-        //     "chara6_png", "chara7_png", "chara8_png", "chara9_png", "chara10_png", "chara11_png",
-        //     "chara12_png", "chara13_png", "chara14_png", "chara15_png", "chara16_png", "chara17_png",
-        //     "chara18_png", "chara19_png", "chara20_png", "chara21_png", "chara22_png", "chara23_png",
-        //     "chara24_png", "chara25_png", "chara26_png"];
+        var list = ["test/asset/chara/chara1.png"];
         var count = -1;
         //this._body.texture = RES.getRes("3_png");
         //循环执行
@@ -103,18 +106,12 @@ class Character extends engine.DisplayObjectContainer {
                 if (count >= list.length) {
                     count = 0;
                 }
-
                 this._body.img.src = list[Math.floor(count)];
             }
-
         });
-
     }
 
     public startidle() {
-
         this._body.img.src = "test/asset/chara/chara1.png";
-
     }
-
 }

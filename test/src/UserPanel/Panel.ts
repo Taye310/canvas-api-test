@@ -1,7 +1,7 @@
 class Panel extends engine.DisplayObjectContainer {
     McCree = new Hero("McCree", true);
     Soilder76 = new Hero("Soilder76", true);
-    Tracer=new Hero("Tracer",true);
+    Tracer = new Hero("Tracer", true);
     sword = new Equipments("sword", 50);
     armor = new Equipments("armor", 10);
     gun = new Equipments("gun", 70);
@@ -39,7 +39,7 @@ class Panel extends engine.DisplayObjectContainer {
         this.bagPanel.graphics.endFill();
         this.addChild(this.bagPanel);
         //初始化用户状态
-        User.user.heroes.push(this.McCree,this.Tracer);
+        User.user.heroes.push(this.McCree, this.Tracer);
         this.McCree.equipments.push(this.sword);
         this.Soilder76.equipments.push(this.gun);
         this.sword.jewel.push(this.blueJewel);
@@ -51,7 +51,24 @@ class Panel extends engine.DisplayObjectContainer {
         this.bag1.y = this.bagPanel.y + 35;
         //mouse.enable(this.stage);
         //this.bag1.addEventListener(onmouseover)
-        this.bag1.addEventListener(engine.TouchType.TOUCH_TAP, this.onBagClick);
+        this.bag1.addEventListener(engine.TouchType.TOUCH_TAP, (e) => {//好蠢 怎么改。。。。。。。。。。。。。。。。。。。。
+            console.log(e.srcElement.textContent);
+            if (e.srcElement.textContent == "Soilder76") {
+                User.user.heroes.push(this.Soilder76);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "armor") {
+                this.McCree.equipments.push(this.armor);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "McCree") {
+                User.user.heroes.push(this.McCree);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "Tracer") {
+                User.user.heroes.push(this.Tracer);
+                e.srcElement.textContent = null;
+            }
+
+            this.init();
+        });
         this.bag1.touchEnabled = true;
         this.addChild(this.bag1);
 
@@ -59,7 +76,24 @@ class Panel extends engine.DisplayObjectContainer {
         this.bag2.textColor = "0xffffff";
         this.bag2.x = this.bagPanel.x + 210;
         this.bag2.y = this.bagPanel.y + 35;
-        this.bag2.addEventListener(engine.TouchType.TOUCH_TAP, this.onBagClick);
+        this.bag3.addEventListener(engine.TouchType.TOUCH_TAP, (e) => {
+            console.log(e.srcElement.textContent);
+            if (e.srcElement.textContent == "Soilder76") {
+                User.user.heroes.push(this.Soilder76);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "armor") {
+                this.McCree.equipments.push(this.armor);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "McCree") {
+                User.user.heroes.push(this.McCree);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "Tracer") {
+                User.user.heroes.push(this.Tracer);
+                e.srcElement.textContent = null;
+            }
+
+            this.init();
+        });
         this.bag2.touchEnabled = true;
         this.addChild(this.bag2);
 
@@ -67,7 +101,24 @@ class Panel extends engine.DisplayObjectContainer {
         this.bag3.textColor = "0xffffff";
         this.bag3.x = this.bagPanel.x + 410;
         this.bag3.y = this.bagPanel.y + 35;
-        this.bag3.addEventListener(engine.TouchType.TOUCH_TAP, this.onBagClick);
+        this.bag3.addEventListener(engine.TouchType.TOUCH_TAP, (e) => {
+            console.log(e.srcElement.textContent);
+            if (e.srcElement.textContent == "Soilder76") {
+                User.user.heroes.push(this.Soilder76);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "armor") {
+                this.McCree.equipments.push(this.armor);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "McCree") {
+                User.user.heroes.push(this.McCree);
+                e.srcElement.textContent = null;
+            } else if (e.srcElement.textContent == "Tracer") {
+                User.user.heroes.push(this.Tracer);
+                e.srcElement.textContent = null;
+            }
+
+            this.init();
+        });
         this.bag3.touchEnabled = true;
         this.addChild(this.bag3);
 
@@ -108,24 +159,25 @@ class Panel extends engine.DisplayObjectContainer {
         this.addChild(this.pet);
     }
 
-    onBagClick(e: MouseEvent) {
-        // console.log(e.target.text)
-        // if (e.target.text == "Soilder76") {
-        //     User.user.heroes.push(this.Soilder76);
-        //     e.target.text = null;
-        // } else if (e.target.text == "armor") {
-        //     this.McCree.equipments.push(this.armor);
-        //     e.target.text = null;
-        // } else if (e.target.text == "McCree") {
-        //     User.user.heroes.push(this.McCree);
-        //     e.target.text = null;
-        // }else if (e.target.text == "Tracer") {
-        //     User.user.heroes.push(this.Tracer);
-        //     e.target.text = null;
-        // }
+    // onBagClick(e: MouseEvent, panel) {
 
-        this.init();
-    }
+    //     console.log(e.srcElement.textContent);
+    //     if (e.srcElement.textContent == "Soilder76") {
+    //         User.user.heroes.push(this.Soilder76);
+    //         e.srcElement.textContent = null;
+    //     } else if (e.srcElement.textContent == "armor") {
+    //         this.McCree.equipments.push(this.armor);
+    //         e.srcElement.textContent = null;
+    //     } else if (e.srcElement.textContent == "McCree") {
+    //         User.user.heroes.push(this.McCree);
+    //         e.srcElement.textContent = null;
+    //     } else if (e.srcElement.textContent == "Tracer") {
+    //         User.user.heroes.push(this.Tracer);
+    //         e.srcElement.textContent = null;
+    //     }
+
+    //     this.init();
+    // }
 
     onHeroesClick(e: MouseEvent) {
         if (this.bag1.text == "") {

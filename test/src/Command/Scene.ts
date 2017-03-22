@@ -23,7 +23,7 @@ class GameScene {
                     var starty: number = Math.floor(GameScene.chara._body.y / 100);
                     var endx: number = Math.floor(e.offsetX / 100);
                     var endy: number = Math.floor(e.offsetY / 100);
-                    var path: TileNode[] = GameScene.map.astarPath(startx - 1, starty, endx, endy);
+                    var path: TileNode[] = GameScene.map.astarPath(startx, starty, endx, endy);
                     //console.log(endx);
                     if (path.length > 1) {
                         //chara.move(e.localX, e.localY, path);
